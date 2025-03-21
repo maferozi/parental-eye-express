@@ -325,6 +325,8 @@ const getActiveDevices = async (req, res) => {
 };
 
 
+
+
 module.exports = {
   createDevice,
   getAllDevices,

@@ -103,8 +103,6 @@ const getRefreshToken = async (req, res, next) => {
 
     const newToken = generateToken(user.toJSON(), '1h');
     const newRefreshToken = generateToken(user.toJSON(), "7d"); // 1 day
-    console.log(refreshToken);
-    console.log(newRefreshToken);
 
     return res.status(200).json({ token: newToken, refreshToken: newRefreshToken });
   } catch (err) {
