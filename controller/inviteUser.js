@@ -15,7 +15,6 @@ const addOrUpdateUser = async (req, res) => {
       email,
       phoneNumber,
       password,
-      adminId,
       parentId,
       driverId,
     } = req.body;
