@@ -7,7 +7,7 @@
     "dev": "nodemon app.js",
     "db:migrate": "sequelize-cli db:migrate",
     "db:seed": "npx sequelize-cli db:seed:all",
-    "db:migrate:undo": "npx sequelize-cli db:migrate:undo",
+    "db:  :undo": "npx sequelize-cli db:migrate:undo",
     "clean": "rimraf dist",
     "build": "npm run clean && babel . --out-dir dist --ignore node_modules,database.json",
     "start": "node dist/app.js"
@@ -38,5 +38,8 @@
     "@babel/preset-env": "^7.26.9",
     "rimraf": "^6.0.1",
     "sequelize-cli": "^6.6.2"
+  },
+  "engines": {
+  "node": "20.x"
   }
 }
