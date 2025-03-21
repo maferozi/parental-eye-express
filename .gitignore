@@ -2,4 +2,4 @@
 test.rest
 .env
 package-lock.json
-
+/dist
