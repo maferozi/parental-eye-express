@@ -39,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       userId: {
         type: DataTypes.INTEGER,
-        allowNull: true, // Now referencing User table instead of InvitedUser
+        allowNull: true,
         unique: true,
         references: {
           model: 'Users',

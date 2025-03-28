@@ -6,7 +6,7 @@ const getUsersWithLocationHistory = async (req, res) => {
     // Find all device IDs that exist in the Location table
     const devicesWithLocation = await Location.findAll({
       attributes: ["device_id"],
-      group: ["device_id"], // Ensures unique device IDs
+      group: ["device_id"],
     });
     
     const deviceIds = devicesWithLocation.map((loc) => loc.device_id);
@@ -17,7 +17,7 @@ const getUsersWithLocationHistory = async (req, res) => {
 
     // Find all users who have these devices
     const devices = await Device.findAll({
-      where: { id: deviceIds },
+      where: { id: deviceIds, parentId: req.user.id },
       attributes: ["id", "deviceName", "status", "userId"],
       include: [
         {
