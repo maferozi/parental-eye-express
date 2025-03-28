@@ -11,9 +11,11 @@ const { initializeSocket } = require("./config/socketConfig");
 const app = express();
 const server = http.createServer(app); // Create HTTP server for Socket.IO
 const PORT = process.env.PORT || 3000;
+const FORNTEND_URL = process.env.FORNTEND_URL || "*";
 
 app.use(express.json());
-app.use(cors({ origin: "*" })); 
+
+app.use(cors({ origin: FORNTEND_URL })); 
 app.use(logger("dev"));
 app.use("/api/", router);
 
