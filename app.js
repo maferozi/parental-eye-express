@@ -15,7 +15,7 @@ const FORNTEND_URL = process.env.FORNTEND_URL || "*";
 
 app.use(express.json());
 
-app.use(cors({ origin: FORNTEND_URL })); 
+app.use(cors({ origin: "*" })); 
 app.use(logger("dev"));
 app.use("/api/", router);
 
