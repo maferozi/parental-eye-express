@@ -16,6 +16,12 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "created_by",
         as: "creator",
       });
+
+      Geofence.hasMany(models.GeofenceDevice, {
+        foreignKey: "geofence_id",
+        as: "geofenceDevices",
+        onDelete: "CASCADE",
+      });
     }
   }
 

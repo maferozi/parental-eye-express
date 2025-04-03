@@ -49,6 +49,13 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "created_by",
         as: "geofences",
       });
+
+      User.hasMany(models.Notification, {
+        foreignKey: "user_id",
+        as: "notifications",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+      });
     }
   }
 
@@ -118,6 +125,15 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id',
       },
     },
+    isVerifyEmail: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    }, 
+    verifyToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },       
   }, {
     sequelize,
     modelName: 'User',

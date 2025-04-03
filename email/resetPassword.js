@@ -1,4 +1,4 @@
-const resetPasswordEmail = (name, resetUrl) => {
+const resetPasswordEmail = (name, resetUrl,serverUrl) => {
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -10,7 +10,7 @@ const resetPasswordEmail = (name, resetUrl) => {
     <body style="margin: 0; padding: 30px auto; font-family: Arial, sans-serif; background-color: #f4f6f8; color: #333;">
       <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
         <div style="text-align: center;">
-          <img src="cid:logo" alt="Company Logo" style="display: block; margin: 0 auto 20px; width: 80px; height: auto;" />
+          <img src="${serverUrl}/logo.webp" alt="Company Logo" style="display: block; margin: 0 auto 20px; width: 80px; height: auto;" />
           <h1 style="color: #003366; font-size: 24px; margin-bottom: 10px;">Password Reset Request</h1>
         </div>
         <p style="color: #333; text-align: start; line-height: 1.6; font-size: 16px;">

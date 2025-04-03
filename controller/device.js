@@ -122,7 +122,6 @@ const assignDeviceToParent = async (req, res) => {
     }
 
     const parent = await User.findByPk(parentId);
-    console.log(parent);
     if (!parent || parent.role !== 2) { // Ensure the user is a parent
       return res.status(404).json({ message: "Parent not found or invalid role." });
     }

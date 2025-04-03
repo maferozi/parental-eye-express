@@ -6,6 +6,7 @@ const cors = require("cors");
 const logger = require("morgan");
 const { connectMqtt } = require("./config/connectMqtt");
 const { initializeSocket } = require("./config/socketConfig");
+const path = require("path");
 
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(cors({ origin: "*" })); 
 app.use(logger("dev"));
 app.use("/api/", router);
+app.use(express.static(path.join(__dirname, "public")));
 
  
 connectMqtt(); 

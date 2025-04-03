@@ -38,7 +38,6 @@ const getUsersWithLocationHistory = async (req, res) => {
 const getLocationByUserId = async (req, res) => {
   try {
     const { userId, startDate, endDate } = req.body;
-    console.log(`Fetching locations for UserID: ${userId} from ${startDate} to ${endDate}`);
 
     const device = await Device.findOne({ where: { userId } });
     if (!device) return res.status(404).json({ message: "Device not found for this user" });

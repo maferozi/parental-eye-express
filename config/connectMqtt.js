@@ -4,6 +4,7 @@ const mqtt = require("mqtt");
 const { Device } = require("../models");
 const { Op } = require("sequelize");
 const { saveDeviceLocation } = require("../helper/locationStore");
+const { saveGeofenceLocation } = require("../helper/geofenceLocationStore");
 
 const { HIVEMQ_CONNECTION_STRING } = process.env;
 
@@ -60,7 +61,7 @@ const subscribeDevice = async (device) => {
       }
 
       if (topic.includes("location")) {
-        await saveDeviceLocation(deviceId, data.latitude, data.longitude);
+        await saveGeofenceLocation(deviceId, data.latitude, data.longitude);
 
         // Only update if status has changed
         if (deviceStatusCache.get(deviceId) !== 1) {
