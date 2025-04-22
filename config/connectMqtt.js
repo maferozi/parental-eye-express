@@ -94,7 +94,7 @@ const subscribeDevice = async (device) => {
 
         if (topic.includes("location")) {
           // Save geofence location (or regular device location as needed)
-          await saveGeofenceLocation(deviceId, data.latitude, data.longitude);
+          await saveGeofenceLocation(associatedUserIds,deviceId, data.latitude, data.longitude);
 
           // If device status is not active, update it and notify all associated users
           if (deviceStatusCache.get(deviceId) !== 1) {
@@ -122,12 +122,12 @@ const subscribeDevice = async (device) => {
             }
           }, 30000);
           deviceTimeouts.set(deviceId, timeout);
-        } else if (topic.includes("danger")) {
+          } else if (topic.includes("danger")) {
           await saveDeviceLocation(deviceId, data.latitude, data.longitude, 2);
           console.log(`🚨 Danger alert received from ${device.deviceName}`);
           associatedUserIds.forEach((userId) => {
             console.log(userId);
-            deviceEventEmitter.emit("dangerAlert", { userId, deviceId, status: 2 });
+            deviceEventEmitter.emit("dangerAlert", { userId, deviceId, lat:data.latitude, long:data.longitude, status: 2 });
           });
         }
       } catch (error) {

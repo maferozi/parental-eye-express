@@ -1,7 +1,8 @@
 const { Location, Geofence, GeofenceDevice } = require("../models");
 const turf = require("@turf/turf");
+const { sendNotification } = require("./notificationHelper");
 
-async function saveGeofenceLocation(deviceId, latitude, longitude, receivedAt) {
+async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longitude, receivedAt) {
     try {
         // Fetch all geofences assigned to this device
         const geofences = await Geofence.findAll({
@@ -48,10 +49,10 @@ async function saveGeofenceLocation(deviceId, latitude, longitude, receivedAt) {
 
             if (geofence.type === "route" && geofence.path) {
                 const route = turf.lineString(geofence.path.coordinates);
-                const nearest = turf.nearestPointOnLine(route, point);
+                const nearest = turf.nearestPointOnLine(route, point, { units: 'meters' });
 
-                // Allow a small threshold for error
-                if (nearest.properties.dist <= 10) {
+                // Allow a threshold of 20 meters
+                if (nearest.properties.dist <= 20) {
                     isSafe = true;
                     break;
                 }
@@ -68,7 +69,18 @@ async function saveGeofenceLocation(deviceId, latitude, longitude, receivedAt) {
 
         // Determine location status
         const locationStatus = isSafe ? 1 : 2;
-
+        if(!isSafe){
+            associatedUserIds.forEach(async(userId) => {
+              await sendNotification({
+                userId: userId,
+                type: "Geofence Alert",
+                data: { 
+                  deviceId,
+                  location:{latitude: latitude, longitude: longitude},
+                 },
+                })
+            });
+        }
         // Convert to GeoJSON
         const geoJson = {
             type: "Point",
