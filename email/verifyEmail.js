@@ -1,10 +1,10 @@
-const resetPasswordEmail = (name, resetUrl) => {
+const verifyEmailTemplate = (name, verificationUrl) => {
   return `
   <!DOCTYPE html>
   <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Password Reset</title>
+    <title>Email Verification</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
       body {
@@ -33,7 +33,7 @@ const resetPasswordEmail = (name, resetUrl) => {
       }
       .btn {
         display: inline-block;
-        background-color: #0061f2;
+        background-color: #28a745;
         color: white;
         padding: 12px 25px;
         text-decoration: none;
@@ -42,7 +42,7 @@ const resetPasswordEmail = (name, resetUrl) => {
         font-weight: bold;
       }
       .btn:hover {
-        background-color: #004bb5;
+        background-color: #218838;
       }
       .footer {
         font-size: 13px;
@@ -51,25 +51,25 @@ const resetPasswordEmail = (name, resetUrl) => {
         text-align: center;
       }
       .link {
-        color: #0061f2;
-        word-break: break-all;
+        color: #28a745;
+        word-break: break-word;
       }
     </style>
   </head>
   <body>
     <div class="email-container">
-      <h2>Password Reset</h2>
+      <h2>Verify Your Email</h2>
       <p>Hi <strong>${name}</strong>,</p>
-      <p>We received a request to reset your password for your <strong>Parental Eye</strong> account. If you made this request, please click the button below to reset your password.</p>
+      <p>Thank you for registering with <strong>Parental Eye</strong>. Please verify your email address by clicking the button below:</p>
 
       <div style="text-align: center;">
-        <a href="${resetUrl}" class="btn" target="_blank">Reset Password</a>
+        <a href="${verificationUrl}" class="btn" target="_blank">Verify Email</a>
       </div>
 
-      <p>If the button above doesn't work, you can also use the following link:</p>
-      <p><a href="${resetUrl}" class="link" target="_blank">${resetUrl}</a></p>
+      <p>If the button doesn't work, you can also use the following link:</p>
+      <p><a href="${verificationUrl}" class="link" target="_blank">${verificationUrl}</a></p>
 
-      <p>If you did not request a password reset, you can safely ignore this email.</p>
+      <p>This step ensures the security of your account and lets us stay connected.</p>
 
       <div class="footer">
         This is an automated message from Parental Eye. Please do not reply.
@@ -80,4 +80,4 @@ const resetPasswordEmail = (name, resetUrl) => {
   `;
 };
 
-module.exports = { resetPasswordEmail };
+module.exports = { verifyEmailTemplate };

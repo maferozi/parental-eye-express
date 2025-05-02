@@ -5,9 +5,12 @@ const { resetPasswordEmail } = require("../email/resetPassword");
 const { sendMail } = require("../helper/mail");
 const { ne } = require("faker/lib/locales");
 const path = require("path");
+const { verifyEmailTemplate } = require("../email/verifyEmail");
+const logoPath = path.join(__dirname, '../public/logo.webp');
 
 
 const BACKEND_URL = process.env.BACKEND_URL ;
+const EMAIL_USER = process.env.EMAIL_USER ;
 
 
 const signUp = async (req, res, next) => {
@@ -46,14 +49,9 @@ const signUp = async (req, res, next) => {
 
     await sendMail({
       from: `Support Parental Eye`,
-      to: email,
-      subject: "Verify your Email",
-      template: "verifyEmail",
-      context: {
-        name: `${newUser.firstName} ${newUser.lastName}`,
-        verificationUrl,
-        serverUrl: BACKEND_URL,  // Make sure this is correct
-      },
+      to: user.email,
+      subject: "Verify Your Email",
+      html: verifyEmailTemplate(`${user.firstName} ${user.lastName}`, verificationUrl),
     });
     
 
@@ -83,14 +81,9 @@ const loginController = async (req, res, next) => {
 
       await sendMail({
         from: `Support Parental Eye`,
-        to: email,
-        subject: "Verify your Email",
-        template: "verifyEmail",
-        context: {
-          name: `${user.firstName} ${user.lastName}`,
-          verificationUrl,
-          serverUrl: BACKEND_URL,  // Make sure this is correct
-        },
+        to: user.email,
+        subject: "Verify Your Email",
+        html: verifyEmailTemplate(`${user.firstName} ${user.lastName}`, verificationUrl),
       });
       
 
@@ -173,21 +166,11 @@ const forgotPassword = async (req, res, next) => {
 
     await sendMail({
       from: `Support Parental Eye`,
-      to: email,
-      subject: 'Reset Your Password',
-      html: resetPasswordEmail(
-        `${user.firstName} ${user.lastName}`,
-        resetUrl,
-        BACKEND_URL
-      ),
-      attachments: [
-        {
-          filename: "logo.png",
-          path: "../public/logo.webp",
-          cid: "logo",
-        },
-      ],
+      to: user.email,
+      subject: "Reset Your Password",
+      html: resetPasswordEmail(`${user.firstName} ${user.lastName}`, resetUrl),
     });
+    
 
     return res
       .status(200)

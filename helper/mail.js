@@ -32,30 +32,11 @@ async function getTransporter() {
   return transporter;
 }
 
-// Configure Handlebars
-async function configureHandlebars(transporter) {
-  const hbs = (await import("nodemailer-express-handlebars")).default;
-  transporter.use(
-    "compile",
-    hbs({
-      viewEngine: {
-        extname: ".hbs",
-        layoutsDir: path.join(__dirname, "../email/"),
-        defaultLayout: "",
-        partialsDir: path.join(__dirname, "../email/"),
-      },
-      viewPath: path.join(__dirname, "../email/"),
-      extName: ".hbs",
-    })
-  );
-}
-
 
 
 exports.sendMail = async (mail) => {
   try {
     const transporter = await getTransporter();
-    await configureHandlebars(transporter);
 
     const mailInfo = await transporter.sendMail(mail);
     
