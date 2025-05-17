@@ -1,7 +1,11 @@
 const { EventEmitter } = require("events");
 const { Notification, User } = require("../models");
+const { geofenceCooldownCache } = require("./cache");
 
-const notificationEventEmitter = new EventEmitter(); // Event emitter for notifications
+const notificationEventEmitter = new EventEmitter();
+
+// In-memory cache to debounce geofence alerts per user
+
 
 /**
  * Send a notification (DB + WebSocket)
@@ -12,14 +16,33 @@ const notificationEventEmitter = new EventEmitter(); // Event emitter for notifi
  */
 const sendNotification = async ({ userId, type, data }) => {
   try {
-    // Check if the user exists
+    // Geofence cooldown logic
+    if (
+      type === "Geofence Alert" &&
+      geofenceCooldownCache.has(userId) &&
+      geofenceCooldownCache.get(userId) === data.deviceId
+    ) {
+      console.log(`⏳ Skipping duplicate geofence alert for user ${userId}`);
+      return; // ✅ Still resolve to continue main flow
+    }
+
+    // Set cooldown
+    if (type === "Geofence Alert") {
+      geofenceCooldownCache.set(userId, data.deviceId);
+
+      setTimeout(() => {
+        geofenceCooldownCache.delete(userId);
+        console.log(`⏱️ Cooldown expired for user ${userId}`);
+      }, 5 * 60 * 1000);
+    }
+
+    // Proceed with notification storage
     const user = await User.findByPk(userId);
     if (!user) {
       console.log(`⚠️ User ${userId} not found. Skipping notification.`);
       return;
     }
 
-    // Store in database
     const notification = await Notification.create({
       user_id: userId,
       type,
@@ -27,12 +50,12 @@ const sendNotification = async ({ userId, type, data }) => {
     });
 
     console.log(`✅ Notification saved for User ${userId}:`, { type, data });
-
-    // Emit notification event (this will be picked up in socketConfig.js)
     notificationEventEmitter.emit("newNotification", { userId, notification });
+
   } catch (error) {
     console.error("❌ Error sending notification:", error);
   }
 };
+
 
 module.exports = { sendNotification, notificationEventEmitter };

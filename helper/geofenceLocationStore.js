@@ -28,9 +28,9 @@ async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longi
                 location_status: 1,
                 received_at: receivedAt,
             });
-            return;
+            console.log("✅ Location saved:");
         }
-
+        else{
         // Convert current location to a GeoJSON point
         const point = turf.point([longitude, latitude]);
         let isSafe = false;
@@ -69,18 +69,21 @@ async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longi
 
         // Determine location status
         const locationStatus = isSafe ? 1 : 2;
-        if(!isSafe){
-            associatedUserIds.forEach(async(userId) => {
-              await sendNotification({
-                userId: userId,
-                type: "Geofence Alert",
-                data: { 
-                  deviceId,
-                  location:{latitude: latitude, longitude: longitude},
-                 },
+        if (!isSafe) {
+            await Promise.all(
+              associatedUserIds.map(userId =>
+                sendNotification({
+                  userId,
+                  type: "Geofence Alert",
+                  data: {
+                    deviceId,
+                    location: { latitude, longitude },
+                  },
                 })
-            });
-        }
+              )
+            );
+          }
+          
         // Convert to GeoJSON
         const geoJson = {
             type: "Point",
@@ -96,6 +99,7 @@ async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longi
         });
 
         console.log(`✅ Location saved for Device ${deviceId} | Status: ${locationStatus === 1 ? "Safe" : "Danger"}`);
+    }
     } catch (error) {
         console.error("❌ Error saving geofence location:", error);
     }
