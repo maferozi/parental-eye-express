@@ -2,7 +2,7 @@ const { Location, Geofence, GeofenceDevice } = require("../models");
 const turf = require("@turf/turf");
 const { sendNotification } = require("./notificationHelper");
 
-async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longitude, receivedAt) {
+async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longitude, locChildId) {
     try {
         // Fetch all geofences assigned to this device
         const geofences = await Geofence.findAll({
@@ -26,7 +26,6 @@ async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longi
                 device_id: deviceId,
                 location: geoJsons, // Pass GeoJSON object
                 location_status: 1,
-                received_at: receivedAt,
             });
             console.log("✅ Location saved:");
         }
@@ -76,6 +75,7 @@ async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longi
                   userId,
                   type: "Geofence Alert",
                   data: {
+                    childId:locChildId,
                     deviceId,
                     location: { latitude, longitude },
                   },

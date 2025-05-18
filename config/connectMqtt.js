@@ -62,7 +62,7 @@ const subscribeDevice = async (device) => {
 
     // Calculate associated user IDs once and store along with the client
     const associatedUserIds = await getAssociatedUserIds(device);
-    clientMap.set(device.deviceName, { client, deviceId: device.id, associatedUserIds });
+    clientMap.set(device.deviceName, { client, deviceId: device.id, associatedUserIds, locChildId:device.userId });
 
     // Emit deviceChange event for each associated user if this is the first time
     if (!deviceStatusCache.has(device.id)) {
@@ -86,7 +86,7 @@ const subscribeDevice = async (device) => {
     client.on("message", async (topic, message) => {
       try {
         const data = JSON.parse(message.toString());
-        const { deviceId, associatedUserIds } = clientMap.get(device.deviceName) || {};
+        const { deviceId, associatedUserIds, locChildId } = clientMap.get(device.deviceName) || {};
         if (!deviceId) {
           console.error(`❌ Device ID not found for ${device.deviceName}`);
           return;
@@ -94,7 +94,7 @@ const subscribeDevice = async (device) => {
 
         if (topic.includes("location")) {
           // Save geofence location (or regular device location as needed)
-          await saveGeofenceLocation(associatedUserIds,deviceId, data.latitude, data.longitude);
+          await saveGeofenceLocation(associatedUserIds,deviceId, data.latitude, data.longitude, locChildId);
 
           // If device status is not active, update it and notify all associated users
           if (deviceStatusCache.get(deviceId) !== 1) {
@@ -127,7 +127,7 @@ const subscribeDevice = async (device) => {
           console.log(`🚨 Danger alert received from ${device.deviceName}`);
           associatedUserIds.forEach((userId) => {
             console.log(userId);
-            deviceEventEmitter.emit("dangerAlert", { userId, deviceId, lat:data.latitude, long:data.longitude, status: 2 });
+            deviceEventEmitter.emit("dangerAlert", { userId, deviceId, lat:data.latitude, long:data.longitude, status: 2,locChildId });
           });
         }
       } catch (error) {

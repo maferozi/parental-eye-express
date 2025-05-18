@@ -54,7 +54,7 @@ const initializeSocket = (server) => {
     sendToUser(userId, "deviceChange", { action, deviceId });
   });
 
-  deviceEventEmitter.on("dangerAlert", async ({ deviceId, userId, long, lat }) => {
+  deviceEventEmitter.on("dangerAlert", async ({ deviceId, userId, long, lat,locChildId }) => {
     console.log(`🚨 Danger alert received from Device ${deviceId} User ${userId}`);
     try {
       const device = await Device.findByPk(deviceId);
@@ -62,8 +62,9 @@ const initializeSocket = (server) => {
       if (device && device.userId) {
         await sendNotification({
           userId: userId,
-          type: "Danger alert",
+          type: "Danger Alert",
           data: { 
+            childId:locChildId,
             deviceId,
             location:{latitude: lat, longitude: long},
            },
