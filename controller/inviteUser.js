@@ -98,20 +98,37 @@ const getAllUsers = async (req, res) => {
     } = req.query;
 
     const offset = (pageNo - 1) * limit;
+    let searchFilter = {}
+    if(req.user.role ===1 ){
+      searchFilter = {
+        [Op.and]: [
+          {
+            [Op.or]: [
+              { firstName: { [Op.iLike]: `%${search}%` } },
+              { lastName: { [Op.iLike]: `%${search}%` } },
+              { email: { [Op.iLike]: `%${search}%` } },
+            ],
+          },
+          { role:2 } , // Apply role filter only if provided
+        ],
+      };
 
-    const searchFilter = {
-      [Op.and]: [
-        { adminId: req.user.id }, // Fetch only users created by the logged-in admin
-        {
-          [Op.or]: [
-            { firstName: { [Op.iLike]: `%${search}%` } },
-            { lastName: { [Op.iLike]: `%${search}%` } },
-            { email: { [Op.iLike]: `%${search}%` } },
-          ],
-        },
-        ...(role ? [{ role }] : []), // Apply role filter only if provided
-      ],
-    };
+    }else{
+
+      searchFilter = {
+        [Op.and]: [
+          { adminId: req.user.id }, // Fetch only users created by the logged-in admin
+          {
+            [Op.or]: [
+              { firstName: { [Op.iLike]: `%${search}%` } },
+              { lastName: { [Op.iLike]: `%${search}%` } },
+              { email: { [Op.iLike]: `%${search}%` } },
+            ],
+          },
+          ...(role ? [{ role }] : []), // Apply role filter only if provided
+        ],
+      };
+    }
 
     const { count, rows } = await User.findAndCountAll({
       where: searchFilter,
