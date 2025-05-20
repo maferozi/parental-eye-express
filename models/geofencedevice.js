@@ -5,6 +5,11 @@ module.exports = (sequelize, DataTypes) => {
   class GeofenceDevice extends Model {
     static associate(models) {
       // No direct association needed, as it acts as a join table
+      GeofenceDevice.belongsTo(models.Geofence, {
+        foreignKey: "geofence_id",
+        as: "geofenceDevices",
+        onDelete: "CASCADE",
+      });
     }
   }
 

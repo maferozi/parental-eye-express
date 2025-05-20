@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const { Device, User,  Location } = require("../models");
 const { clientMap, unsubscribeDevice, subscribeDevice } = require("../config/connectMqtt");
 
@@ -122,7 +122,6 @@ const assignDeviceToParent = async (req, res) => {
     }
 
     const parent = await User.findByPk(parentId);
-    console.log(parent);
     if (!parent || parent.role !== 2) { // Ensure the user is a parent
       return res.status(404).json({ message: "Parent not found or invalid role." });
     }
@@ -300,23 +299,105 @@ const unassignDeviceFromChild = async (req, res) => {
 
 const getActiveDevices = async (req, res) => {
   try {
-    const parentId = req.user.id; // Assuming parentId is retrieved from authentication
-
-    if (!parentId) {
+    const userId = req.user.id; // Assuming userId is retrieved from authentication
+    if (!userId) {
       return res.status(400).json({ message: "Parent ID is required." });
     }
+    let activeDevices=[];
+    let totalCount=0;
+    let activeCount=0;
+    let totalUsers;
 
-    // Fetch active devices for the logged-in parent
-    const activeDevices = await Device.findAll({
+    if(req.user.role==1){
+      activeDevices = await Device.findAll();
+      totalUsers = await User.count({
+        where: {
+          role: {
+            [Op.ne]: 1,
+          },
+        },
+      });
+      totalCount = activeDevices.length;
+      activeCount = activeDevices.filter(device => device.status === 1).length;
+      activeDevices = activeDevices.filter(device => device.status === 1);
+    }
+
+    else if(req.user.role==2){
+      activeDevices = await Device.findAll({
       where: {
-        parentId,
-        status: 1, // 1 = Active
+        parentId:userId,
       },
-    });
+      include: [{ model: User, as: 'user' }]
+      });
+      totalUsers = await User.count({
+        where: {
+          adminId: userId,
+        },
+      });
+      totalCount = activeDevices.length;
+      activeCount = activeDevices.filter(device => device.status === 1).length;
+      activeDevices = activeDevices.filter(device => device.status === 1);
+      
+    }
+    else if(req.user.role==3){
+      const children = await User.findAll({
+        where: { parentId: userId, role: 4 },
+        attributes: ['id']
+      });
+
+      const childIds = children.map(child => child.id);
+
+      activeDevices = await Device.findAll({
+        where: {
+          userId: childIds,
+        },
+        include: [{ model: User, as: 'user' }]
+      });
+      totalUsers=childIds.length;
+      totalCount = activeDevices.length;
+      activeCount = activeDevices.filter(device => device.status === 1).length;
+      activeDevices = activeDevices.filter(device => device.status === 1);
+    }
+    else if(req.user.role==4){
+      activeDevices = await Device.findAll({
+        where: {
+          userId,
+        },
+        include: [{ model: User, as: 'user' }]
+      });
+      totalUsers=1;
+      totalCount = activeDevices.length;
+      activeCount = activeDevices.filter(device => device.status === 1).length;
+      activeDevices = activeDevices.filter(device => device.status === 1);
+    }
+    else if(req.user.role==5){
+      const assignedChildren = await User.findAll({
+        where: { driverId: userId, role: 4 },
+        attributes: ['id']
+      });
+
+      let childIds = assignedChildren.map(child => child.id);
+      totalUsers=childIds.length;
+      
+      childIds.push(userId)
+      activeDevices = await Device.findAll({
+        where: {
+          userId: childIds,
+        },
+        include: [{ model: User, as: 'user' }]
+      });
+      totalCount = activeDevices.length;
+      activeCount = activeDevices.filter(device => device.status === 1).length;
+      activeDevices = activeDevices.filter(device => device.status === 1);
+    }
+
 
     return res.status(200).json({
       message: "Active devices retrieved successfully.",
       devices: activeDevices,
+      totalCount:totalCount,
+      activeCount:activeCount,
+      totalUsers: totalUsers,
     });
   } catch (error) {
     console.error("❌ Error fetching active devices:", error);

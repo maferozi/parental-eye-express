@@ -1,15 +1,21 @@
 const { User } = require("../models");
 const { generateHash, compare } = require("../helper/hash");
-const { generateToken, verifyToken } = require("../helper/jwt");
+const { generateToken, verifyToken, decode } = require("../helper/jwt");
 const { resetPasswordEmail } = require("../email/resetPassword");
 const { sendMail } = require("../helper/mail");
 const { ne } = require("faker/lib/locales");
+const path = require("path");
+const { verifyEmailTemplate } = require("../email/verifyEmail");
+const logoPath = path.join(__dirname, '../public/logo.webp');
+
+
+const BACKEND_URL = process.env.BACKEND_URL ;
+const EMAIL_USER = process.env.EMAIL_USER ;
 
 
 const signUp = async (req, res, next) => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
-    console.log(firstName, lastName, email, password);
 
     if (!firstName || !lastName || !email || !password) {
       const error = new Error();
@@ -36,7 +42,20 @@ const signUp = async (req, res, next) => {
       role: role || 2,
     });
 
-    res.status(201).json({ message: "User registered successfully", user: newUser });
+    const verificationToken = generateToken({ email }, '24h');
+    const verificationUrl = `${req?.headers?.origin}/auth/verify-email/${verificationToken}`;
+    newUser.verifyToken = verificationToken;
+    await newUser.save();
+
+    await sendMail({
+      from: `Support Parental Eye`,
+      to: user.email,
+      subject: "Verify Your Email",
+      html: verifyEmailTemplate(`${user.firstName} ${user.lastName}`, verificationUrl),
+    });
+    
+
+    res.status(201).json({ message: "Account Created. Verification email sent please verify your email to login", user: newUser });
   } catch (error) {
     console.error(error);
     next(error);
@@ -51,6 +70,25 @@ const loginController = async (req, res, next) => {
     if (!user) {
       const error = new Error("User not found");
       error.status = 404;
+      throw error;
+    }
+
+    if (!user.isVerifyEmail) {
+      const verificationToken = generateToken({ email }, '24h');
+      const verificationUrl = `${req?.headers?.origin}/auth/verify-email/${verificationToken}`;
+      user.verifyToken = verificationToken;
+      await user.save();
+
+      await sendMail({
+        from: `Support Parental Eye`,
+        to: user.email,
+        subject: "Verify Your Email",
+        html: verifyEmailTemplate(`${user.firstName} ${user.lastName}`, verificationUrl),
+      });
+      
+
+      const error = new Error('Please Verify Your Email First From Your Email Inbox');
+      error.statusCode = 409;
       throw error;
     }
 
@@ -127,22 +165,12 @@ const forgotPassword = async (req, res, next) => {
     await user.save();
 
     await sendMail({
-      from: `Support E invoicing`,
-      to: email,
-      subject: 'Reset Your Password',
-      html: resetPasswordEmail(
-        user.firstName,
-        resetUrl
-      ),
-      attachments: [
-        {
-          filename: "logo.png",
-          path: "./parental_eye.png",
-          cid: "logo",
-
-        },
-      ],
+      from: `Support Parental Eye`,
+      to: user.email,
+      subject: "Reset Your Password",
+      html: resetPasswordEmail(`${user.firstName} ${user.lastName}`, resetUrl),
     });
+    
 
     return res
       .status(200)
@@ -161,8 +189,6 @@ const setPassword = async (req, res, next) => {
     const tokenData = await verifyToken(passwordToken);
 
     const user = await User.findOne({ where: { email: tokenData.email } });
-    console.log(user);
-    console.log(passwordToken);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -200,5 +226,41 @@ const getAdminParent = async (req, res, next) => {
   }
 } 
 
+const verifyEmailToken = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const decoded = decode(token);
+    const email = decoded.email;
+    // Find user by token
+    if (!email) {
+      return next({ message: "Invalid Token" });
+    }
+    
+    // Find user by email
+    const user = await User.findOne({
+      where: { email },
+    });
 
-module.exports = { signUp, loginController, me, getRefreshToken, forgotPassword, setPassword, getAdminParent };
+    if (!user) {
+      return next({ message: "User not found" });
+    }
+
+    if (user.verifyToken !== token) {
+      return next({ message: "Invalid or Expired Token" });
+    }
+
+
+
+    // Update user fields
+    user.isVerifyEmail = true;
+    user.verifyToken = null;
+    await user.save();
+
+    res.json({ message: "Email Verified Successfully!" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+
+module.exports = { signUp, loginController, me, getRefreshToken, forgotPassword, setPassword, getAdminParent, verifyEmailToken };
