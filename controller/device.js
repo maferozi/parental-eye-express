@@ -309,12 +309,15 @@ const getActiveDevices = async (req, res) => {
     let totalUsers;
 
     if(req.user.role==1){
-      activeDevices = await Device.findAll();
+      activeDevices = await Device.findAll({
+        include: [{ model: User, as: 'user' }]
+      });
       totalUsers = await User.count({
         where: {
           role: {
             [Op.ne]: 1,
           },
+
         },
       });
       totalCount = activeDevices.length;

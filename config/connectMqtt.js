@@ -1,6 +1,6 @@
 const { Server } = require("socket.io");
 const mqtt = require("mqtt");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 require("dotenv").config();
 
 const { Device, User } = require("../models");
@@ -23,6 +23,8 @@ const getAssociatedUserIds = async (device) => {
   if (device.userId) {
     // The device owner (child)
     userIds.add(device.userId);
+
+    
     // Load the child record
     const child = await User.findByPk(device.userId);
     if (child) {
@@ -66,7 +68,18 @@ const subscribeDevice = async (device) => {
 
     // Emit deviceChange event for each associated user if this is the first time
     if (!deviceStatusCache.has(device.id)) {
-      associatedUserIds.forEach((userId) => {
+      const superAdmin = await User.findAll({
+        where: {
+          role: 1,
+        },
+      });
+
+      // 2. Map super admin IDs
+      const superAdminIds = superAdmin.map((admin) => admin.id);
+
+      // 3. Combine associatedUserIds and superAdminIds (avoiding duplicates if needed)
+      const allUserIds = [...new Set([...associatedUserIds, ...superAdminIds])];
+      allUserIds.forEach((userId) => {
         deviceEventEmitter.emit("deviceChange", { userId, action: "added", deviceId: device.id });
       });
     }
@@ -101,7 +114,18 @@ const subscribeDevice = async (device) => {
             await Device.update({ status: 1 }, { where: { id: deviceId } });
             deviceStatusCache.set(deviceId, 1);
             console.log(`✅ Device ${device.deviceName} is ACTIVE`);
-            associatedUserIds.forEach((userId) => {
+            const superAdmin = await User.findAll({
+              where: {
+                role: 1,
+              },
+            });
+            
+            // 2. Map super admin IDs
+            const superAdminIds = superAdmin.map((admin) => admin.id);
+            
+            // 3. Combine associatedUserIds and superAdminIds (avoiding duplicates if needed)
+            const allUserIds = [...new Set([...associatedUserIds, ...superAdminIds])];
+            allUserIds.forEach((userId) => {
               deviceEventEmitter.emit("deviceStatusChange", { userId, deviceId, status: 1 });
             });
           }
@@ -116,7 +140,18 @@ const subscribeDevice = async (device) => {
               await Device.update({ status: 2 }, { where: { id: deviceId } });
               deviceStatusCache.set(deviceId, 2);
               console.log(`⏳ Device ${device.deviceName} is now INACTIVE (No updates in 30s)`);
-              associatedUserIds.forEach((userId) => {
+              const superAdmin = await User.findAll({
+                where: {
+                  role: 1,
+                },
+              });
+
+              // 2. Map super admin IDs
+              const superAdminIds = superAdmin.map((admin) => admin.id);
+
+              // 3. Combine associatedUserIds and superAdminIds (avoiding duplicates if needed)
+              const allUserIds = [...new Set([...associatedUserIds, ...superAdminIds])];
+              allUserIds.forEach((userId) => {
                 deviceEventEmitter.emit("deviceStatusChange", { userId, deviceId, status: 2 });
               });
             }
@@ -151,8 +186,20 @@ const unsubscribeDevice = async (deviceName) => {
       clientMap.delete(deviceName);
       deviceStatusCache.delete(deviceId);
 
+      const superAdmin = await User.findAll({
+        where: {
+          role: 1,
+        },
+      });
+
+      // 2. Map super admin IDs
+      const superAdminIds = superAdmin.map((admin) => admin.id);
+
+      // 3. Combine associatedUserIds and superAdminIds (avoiding duplicates if needed)
+      const allUserIds = [...new Set([...associatedUserIds, ...superAdminIds])];
+
       // Emit deviceChange removal event for each associated user
-      associatedUserIds.forEach((userId) => {
+      allUserIds.forEach((userId) => {
         deviceEventEmitter.emit("deviceChange", { userId, action: "removed", deviceId });
       });
 
