@@ -1,6 +1,7 @@
 const { Location, Geofence, GeofenceDevice } = require("../models");
 const turf = require("@turf/turf");
 const { sendNotification } = require("./notificationHelper");
+const { geofenceCooldownCache } = require("./cache");
 
 async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longitude, locChildId) {
     try {
@@ -82,7 +83,19 @@ async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longi
                 })
               )
             );
+          }else{
+            associatedUserIds.map(userId =>{
+                if (
+                type === "Geofence Alert" &&
+                geofenceCooldownCache.has(userId) &&
+                geofenceCooldownCache.get(userId) === data.deviceId
+                ) {
+                    console.log(`⏳ Skipping duplicate geofence alert for user ${userId}`);
+                    return; // ✅ Still resolve to continue main flow
+                }
+          })
           }
+
           
         // Convert to GeoJSON
         const geoJson = {
@@ -95,7 +108,6 @@ async function saveGeofenceLocation(associatedUserIds, deviceId, latitude, longi
             device_id: deviceId,
             location: geoJson,
             location_status: locationStatus,
-            received_at: receivedAt,
         });
 
         console.log(`✅ Location saved for Device ${deviceId} | Status: ${locationStatus === 1 ? "Safe" : "Danger"}`);
