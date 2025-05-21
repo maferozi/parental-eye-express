@@ -24,6 +24,13 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "device_id",
         as: "geofences", // Alias for associated geofences
       });
+
+        Device.hasMany(models.Location, {
+    foreignKey: 'device_id',
+    as: 'locations',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+  });
     }
   }
 

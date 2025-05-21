@@ -1,37 +1,63 @@
 const { Op } = require("sequelize");
 const { User, Device, Location } = require("../models");
 
-const getUsersWithLocationHistory = async (req, res) => {
+const getUsersWithLocationHistory = async (req, res, next) => {
   try {
-    // Find all device IDs that exist in the Location table
-    const devicesWithLocation = await Location.findAll({
-      attributes: ["device_id"],
-      group: ["device_id"],
-    });
-    
-    const deviceIds = devicesWithLocation.map((loc) => loc.device_id);
+    const role = req.user.role;
+    const me = req.user.id;
 
-    if (deviceIds.length === 0) {
-      return res.status(404).json({ message: "No users with location history found." });
+    // 1️⃣ Build user‐filter based on role
+    let userWhere = {};
+    if (role === 2)       userWhere.adminId   = me;
+    else if (role === 3)  userWhere.parentId  = me;
+    else if (role === 4)  userWhere.id        = me;      // child sees only self
+    else if (role === 5)  userWhere.driverId  = me;
+    else return res.status(403).json({ message: 'Unauthorized' });
+
+    // 2️⃣ Fetch only those users
+    const users = await User.findAll({
+      where: userWhere,
+      attributes: ['id', 'firstName', 'lastName', 'email'],
+    });
+    if (!users.length) {
+      return res.status(404).json({ message: 'No users found for your role.' });
     }
 
-    // Find all users who have these devices
+    const userIds = users.map(u => u.id);
+
+    // 3️⃣ Fetch their devices—but only those that have at least one Location
     const devices = await Device.findAll({
-      where: { id: deviceIds, parentId: req.user.id },
-      attributes: ["id", "deviceName", "status", "userId"],
+      where: {
+        userId: { [Op.in]: userIds }
+      },
+      attributes: ['id', 'deviceName', 'status', 'userId'],
       include: [
+        // bring in the user info
         {
           model: User,
-          as: "user",
-          attributes: ["id", "firstName", "phoneNumber"],
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email']
         },
+        // require at least one matching Location row
+        {
+          model: Location,
+          as: 'locations',
+          attributes: [],       // we don’t need the full location payload here
+          required: true        // INNER JOIN → filters out devices w/ zero locations
+        }
       ],
+      // group by Device.id to avoid duplicates if a device has many locations
+      group: ['Device.id', 'user.id'],
     });
 
-    return res.status(200).json({ devices });
+    if (!devices.length) {
+      return res.status(404).json({ message: 'No devices with location history.' });
+    }
+
+    return res.status(200).json({ users, devices });
   } catch (error) {
-    console.error("Error fetching users with location history:", error);
-    return res.status(500).json({ message: "Internal server error." });
+    console.error('Error in getUsersWithLocationHistory:', error);
+    next(error);
   }
 };
 
