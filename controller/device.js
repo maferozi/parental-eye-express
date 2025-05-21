@@ -151,7 +151,7 @@ const assignDeviceToChild = async (req, res) => {
     }
 
     const child = await User.findByPk(childId);
-    if (!child || child.role !== 4) { // Ensure the user is a child
+    if (!child || !(child.role == 4 || child.role == 5)) { // Ensure the user is a child
       return res.status(404).json({ message: "Child not found or invalid role." });
     }
 
@@ -190,7 +190,7 @@ const getUnassignedChildren = async (req, res) => {
 
     // Find all children of the parent
     const children = await User.findAll({
-      where: { adminId: parentId, role: 4 }, // Ensure role is child
+      where: { adminId: parentId, role: { [Op.in]: [4, 5] }, }, // Ensure role is child
     });
 
     // Fetch all devices assigned to the same parent
@@ -408,6 +408,72 @@ const getActiveDevices = async (req, res) => {
   }
 };
 
+const setLocationMonitoringTime = async (req, res, next) => {
+  try {
+    const { location_start_time, location_end_time } = req.body;
+    const userId = req.user.id;
+
+    // Validate inputs
+    if (!location_start_time || !location_end_time) {
+      new Error('Start and end time are required.');
+    }
+
+    // Optional: Check valid time format (HH:MM:SS)
+    const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
+    if (!timeRegex.test(location_start_time) || !timeRegex.test(location_end_time)) {
+      new Error('Time must be in HH:MM:SS format.');
+    }
+
+    // Update all devices for the user
+    const [updatedCount] = await Device.update(
+      {
+        location_start_time,
+        location_end_time
+      },
+      {
+        where: { userId }
+      }
+    );
+
+    if (updatedCount === 0) {
+      new Error('No devices found for this user.');
+    }
+
+    return res.status(200).json({
+      message: 'Location monitoring time updated successfully for all devices.',
+      location_start_time,
+      location_end_time
+    });
+  } catch (error) {
+    console.error('Error updating location time:', error);
+    next(error);
+  }
+};
+
+const getLocationMonitoringTime = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // Fetch all devices of the user with location time fields
+    const devices = await Device.findAll({
+      where: { userId:userId },
+      attributes: ["id", "deviceName", "location_start_time", "location_end_time"],
+    });
+
+    if (!devices || devices.length === 0) {
+      new Error("No devices found for this user.");
+    }
+
+    return res.status(200).json({
+      message: "Monitoring times retrieved successfully.",
+      data:devices,
+    });
+  } catch (error) {
+    console.error("Error fetching monitoring times:", error);
+    next(error);
+  }
+};
+
 
 
 
@@ -423,5 +489,7 @@ module.exports = {
     unassignDeviceFromParent,
     unassignDeviceFromChild,
     getActiveDevices,
+    setLocationMonitoringTime,
+    getLocationMonitoringTime,
 
 };

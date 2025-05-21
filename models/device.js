@@ -65,6 +65,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         defaultValue: 2,
       },
+      location_start_time: {
+      type: DataTypes.TIME,
+      allowNull: false,
+      defaultValue: '07:00:00',
+    },
+    location_end_time: {
+      type: DataTypes.TIME,
+      allowNull: false,
+      defaultValue: '15:00:00',
+    },
       
     },
     {
