@@ -380,7 +380,7 @@ const getActiveDevices = async (req, res) => {
       });
 
       let childIds = assignedChildren.map(child => child.id);
-      totalUsers=childIds.length;
+      totalUsers=childIds.length+1;//includig deriver
       
       childIds.push(userId)
       activeDevices = await Device.findAll({

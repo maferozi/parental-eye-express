@@ -104,6 +104,23 @@ const subscribeDevice = async (device) => {
           console.error(`❌ Device ID not found for ${device.deviceName}`);
           return;
         }
+         const fullDevice = await Device.findByPk(deviceId);
+    if (!fullDevice || !fullDevice.location_start_time || !fullDevice.location_end_time) {
+      console.warn(`⚠️ Device ${device.deviceName} has no timing restrictions defined. Proceeding.`);
+    } else {
+      // Current time in HH:mm:ss format
+      const now = new Date();
+      const currentTime = now.toTimeString().split(" ")[0];
+
+      // Ensure times are in comparable format
+      const start = fullDevice.location_start_time;
+      const end = fullDevice.location_end_time;
+
+      if (currentTime < start || currentTime > end) {
+        console.log(`⛔ Outside allowed time range for ${device.deviceName}. Ignoring message.`);
+        return;
+      }
+    }
 
         if (topic.includes("location")) {
           // Save geofence location (or regular device location as needed)

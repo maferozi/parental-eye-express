@@ -11,7 +11,7 @@ const getUsersWithLocationHistory = async (req, res, next) => {
     if (role === 2)       userWhere.adminId   = me;
     else if (role === 3)  userWhere.parentId  = me;
     else if (role === 4)  userWhere.id        = me;      // child sees only self
-    else if (role === 5)  userWhere.driverId  = me;
+    else if (role === 5)  userWhere.id  = me;
     else return res.status(403).json({ message: 'Unauthorized' });
 
     // 2️⃣ Fetch only those users
