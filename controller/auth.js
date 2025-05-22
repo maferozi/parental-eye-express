@@ -49,9 +49,9 @@ const signUp = async (req, res, next) => {
 
     await sendMail({
       from: `Support Parental Eye`,
-      to: user.email,
+      to: newUser.email,
       subject: "Verify Your Email",
-      html: verifyEmailTemplate(`${user.firstName} ${user.lastName}`, verificationUrl),
+      html: verifyEmailTemplate(`${newUser.firstName} ${newUser.lastName}`, verificationUrl),
     });
     
 

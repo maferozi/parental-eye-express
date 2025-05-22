@@ -389,6 +389,8 @@ const getActiveDevices = async (req, res) => {
         },
         include: [{ model: User, as: 'user' }]
       });
+      
+
       totalCount = activeDevices.length;
       activeCount = activeDevices.filter(device => device.status === 1).length;
       activeDevices = activeDevices.filter(device => device.status === 1);
